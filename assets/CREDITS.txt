@@ -1,0 +1,44 @@
+Surface textures: Poly Haven, CC0 1.0.
+Powered by Poly Haven — https://polyhaven.com
+https://polyhaven.com/a/concrete_layers_02
+https://polyhaven.com/a/asphalt_02
+https://polyhaven.com/license
+Downloaded 2026-10-25. Resized normal/roughness maps and re-encoded WebP for browser delivery.
+[
+  {
+    "asset": "concrete",
+    "map": "Diffuse",
+    "source_sha256": "cca314fbb793e3928111912f1d6d4d79edf4420402e56019d70fec0bdc2efca5",
+    "optimized_bytes": 41914
+  },
+  {
+    "asset": "concrete",
+    "map": "nor_gl",
+    "source_sha256": "ee35d817b5fa26f824479ef9d3a5ab308f4f33846c7d62d6583457dc900c6049",
+    "optimized_bytes": 12184
+  },
+  {
+    "asset": "concrete",
+    "map": "Rough",
+    "source_sha256": "1120d3546b604db2db5ef300f2e16d4aee211d09e3b6ca67ce2350f714d9d087",
+    "optimized_bytes": 7888
+  },
+  {
+    "asset": "asphalt",
+    "map": "Diffuse",
+    "source_sha256": "1aa5ce99f58a625c71d48cfc3e68b65ca85ccb00f39e045c0a928608a0ea25ed",
+    "optimized_bytes": 322288
+  },
+  {
+    "asset": "asphalt",
+    "map": "nor_gl",
+    "source_sha256": "42a1c381b53204e83a982db2864479a30bc127bbdeebb1006f8ee51bff099df3",
+    "optimized_bytes": 64158
+  },
+  {
+    "asset": "asphalt",
+    "map": "Rough",
+    "source_sha256": "70ba3edc65525eb4dc366cf010ca7ae0bd34e0251ff0225c2dad627a873d0712",
+    "optimized_bytes": 75452
+  }
+]
