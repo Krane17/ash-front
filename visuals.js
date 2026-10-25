@@ -21,7 +21,14 @@ const AshVisuals=(()=>{
  rb(torso,gear,0,.56,.07,.2,.09,.15,.02); // scarf under the face
  for(const side of [-1,1]){const hip=new THREE.Group();hip.position.set(side*.13,.9,0);root.add(hip);ell(hip,cloth,0,-.18,0,.105,.235,.105);const knee=new THREE.Group();knee.position.y=-.39;hip.add(knee);ell(knee,cloth,0,-.16,-.018,.085,.205,.085);rb(knee,gear,0,0,.08,.13,.13,.055,.025);ell(knee,rubber,0,-.37,.055,.095,.105,.16);rb(knee,rubber,0,-.43,.045,.18,.04,.3,.015);e.rig.legs.push({hip,knee});
  const shoulder=new THREE.Group();shoulder.position.set(side*.275,.4,0);torso.add(shoulder);shoulder.rotation.x=-.35;shoulder.rotation.z=side*.18;ell(shoulder,cloth,0,-.13,0,.085,.18,.09);const elbow=new THREE.Group();elbow.position.y=-.28;elbow.rotation.x=-1.13;shoulder.add(elbow);ell(elbow,cloth,0,-.12,0,.072,.155,.075);ell(elbow,rubber,0,-.27,.01,.065,.08,.065);e.rig.arms.push({shoulder,elbow});}
+ const role=e.role?.weapon||'rifle';
+ if(role==='lmg'){rb(torso,gear,0,.28,-.28,.44,.48,.24,.04);for(let k=0;k<7;k++)tube(torso,steel,-.2+k*.06,.35,.27,.018,.018,.12);}
+ if(role==='dmr')ell(torso,thread,0,.52,-.12,.29,.12,.2);
  const rifle=new THREE.Group();rifle.position.set(.06,.23,.27);rifle.rotation.x=.04;torso.add(rifle);rb(rifle,rubber,0,0,.12,.09,.105,.45,.008);tube(rifle,steel,0,0,.43,.02,.02,.35,'z');rb(rifle,rubber,0,-.11,.05,.065,.2,.08,.008);rb(rifle,gear,0,.06,.06,.065,.035,.17,.008);
+ e.rig.weapon=rifle;rifle.userData.weapon=role;
+ if(role==='smg'){rifle.scale.set(.9,.9,.7);rb(rifle,rubber,0,.10,.14,.06,.08,.08);}
+ if(role==='lmg'){tube(rifle,steel,0,0,.64,.026,.026,.36,'z');rb(rifle,gear,0,-.15,.11,.18,.22,.18);for(const side of [-1,1]){const leg=tube(rifle,steel,side*.08,-.13,.57,.012,.012,.3);leg.rotation.z=side*.3;}}
+ if(role==='dmr'){tube(rifle,steel,0,0,.66,.018,.018,.4,'z');tube(rifle,rubber,0,.12,.1,.046,.046,.27,'z');for(const zz of [-.04,.24])tube(rifle,steel,0,.12,zz,.055,.055,.035,'z');}
  root.traverse(m=>{if(m.isMesh){m.geometry.computeBoundingBox();const sz=m.geometry.boundingBox.getSize(new THREE.Vector3()).multiply(m.scale);m.userData.detail=Math.max(sz.x,sz.y,sz.z)<.21;m.userData.enemy=e;m.userData.head=m.parent===torso&&m.position.y>.52;hitParts.push(m)}});
  }
  function animateSoldier(e,dt,time){const r=e.rig;if(!r)return;if(e.dead){r.death=Math.min(1,r.death+dt*2.4);e.g.rotation.z=Math.sin(r.death*Math.PI/2)*1.45;e.g.position.y=(r.deathY??e.home.y)+.08*r.death;r.torso.rotation.x=-r.death*.18;return;}r.torso.rotation.x=0;const distance=e.g.position.distanceTo(r.last);r.last.copy(e.g.position);r.walk=THREE.MathUtils.lerp(r.walk,distance>dt*.12?1:0,Math.min(1,dt*8));const phase=e.phase*1.4;for(let i=0;i<2;i++){const swing=Math.sin(phase+i*Math.PI);r.legs[i].hip.rotation.x=swing*.42*r.walk;r.legs[i].knee.rotation.x=Math.max(0,-swing)*.65*r.walk;r.arms[i].shoulder.rotation.x=-.35+Math.sin(phase+i*Math.PI)*.06*r.walk;}r.torso.position.y=.96+Math.sin(time*2.2+e.phase)*.006+Math.abs(Math.sin(phase))*.016*r.walk;r.torso.rotation.z=Math.sin(phase)*.025*r.walk;}
@@ -38,7 +45,14 @@ const AshVisuals=(()=>{
  part(.063,.02,.04,.006,.052,.115,rubber,.003);part(.068,-.012,.12,.012,.018,.035,edge,.004);for(const z of [-.1,.12])tube(g,edge,.065,-.035,z,.008,.008,.008,'x',10);
  part(0,-.185,.025,.07,.014,.12,poly);part(0,-.15,-.027,.07,.07,.012,poly);
  part(0,.178,-.12,.07,.13,.07,poly);
- part(-.085,.30,-.12,.012,.14,.025);part(.085,.30,-.12,.012,.14,.025);part(0,.375,-.12,.18,.012,.025);part(0,.225,-.12,.18,.012,.025);
+ // Open holographic hood: clear optical axis, bevelled protective rim and side controls.
+ part(-.095,.30,-.12,.018,.17,.075);part(.095,.30,-.12,.018,.17,.075);part(0,.39,-.12,.205,.018,.075);part(0,.21,-.12,.205,.018,.075);
+ for(const side of [-1,1]){tube(g,edge,side*.108,.26,-.12,.017,.017,.014,'x');for(let k=0;k<3;k++)part(side*.107,.31+k*.016,-.12,.008,.006,.04,poly,.002);}
+ part(0,.15,-.12,.14,.035,.15,edge);part(0,.134,-.12,.11,.02,.19,poly);
+ // Charging handle, forward assist, sling mounts and receiver wear edges.
+ part(0,.06,.19,.17,.025,.032,poly);tube(g,gunsteel,.085,.065,.09,.022,.022,.06,'z');
+ for(const z of [-.18,.16]){part(-.065,.055,z,.006,.012,.07,edge,.002);part(.065,-.055,z,.006,.009,.06,edge,.002);}
+ tube(g,poly,.085,-.02,-.43,.036,.036,.17,'z');tube(g,edge,.085,-.02,-.52,.03,.03,.018,'z');
  // Curved forearms, sleeves and individually shaped gloved fingers.
  const left=new THREE.Group(),right=new THREE.Group();g.add(left,right);
  const limb=(parent,a,b,rad,mat)=>{const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),mid=av.clone().add(bv).multiplyScalar(.5);const m=tube(parent,mat,mid.x,mid.y,mid.z,rad*.85,rad,av.distanceTo(bv));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),av.sub(bv).normalize());};
@@ -54,7 +68,7 @@ function applyAshSurfaces(renderer,scene,materials){
  if(!renderer.capabilities||typeof ASH_TEXTURES==='undefined')return;
  const loader=new THREE.TextureLoader(),sets={};
  for(const name of ['concrete','asphalt']){sets[name]={};for(const type of ['Diffuse','nor_gl','Rough']){const t=loader.load(ASH_TEXTURES[name+'_'+type]);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(type==='Diffuse')t.colorSpace=THREE.SRGBColorSpace;sets[name][type]=t;}}
- for(const [mat,kind]of materials){const data=sets[kind];mat.map=data.Diffuse;mat.normalMap=data.nor_gl;mat.normalScale=new THREE.Vector2(kind==='asphalt'?.45:.5,kind==='asphalt'?.45:.5);mat.roughnessMap=data.Rough;mat.roughness=kind==='asphalt'?.82:.97;mat.metalness=0;mat.color.lerp(new THREE.Color(0xffffff),.5);
+ for(const [mat,kind]of materials){const data=sets[kind];mat.map=data.Diffuse;mat.normalMap=data.nor_gl;mat.normalScale=new THREE.Vector2(kind==='asphalt'?.45:.5,kind==='asphalt'?.45:.5);mat.roughnessMap=data.Rough;mat.roughness=kind==='asphalt'?.82:.97;mat.metalness=0;mat.color.lerp(new THREE.Color(0xffffff),.15);
  // Metric UVs on both ordinary and instanced architecture: no stretched wall textures.
  mat.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <worldpos_vertex>',`#include <worldpos_vertex>
  vec4 surfacePosition=vec4(transformed,1.0);
@@ -77,8 +91,8 @@ function applyAshSurfaces(renderer,scene,materials){
  vRoughnessMapUv=metricUv;
  #endif`);};mat.customProgramCacheKey=()=> 'ash-metric-pbr-v1';mat.needsUpdate=true;
  }
- const skyCanvas=document.createElement('canvas');skyCanvas.width=1024;skyCanvas.height=512;const ctx=skyCanvas.getContext('2d'),grad=ctx.createLinearGradient(0,0,0,512);grad.addColorStop(0,'#536878');grad.addColorStop(.48,'#b5bcb8');grad.addColorStop(.6,'#b0afa0');grad.addColorStop(1,'#414a48');ctx.fillStyle=grad;ctx.fillRect(0,0,1024,512);
+ const skyCanvas=document.createElement('canvas');skyCanvas.width=1024;skyCanvas.height=512;const ctx=skyCanvas.getContext('2d'),grad=ctx.createLinearGradient(0,0,0,512);grad.addColorStop(0,'#718d9d');grad.addColorStop(.48,'#d4cbb0');grad.addColorStop(.6,'#c5ae89');grad.addColorStop(1,'#414a48');ctx.fillStyle=grad;ctx.fillRect(0,0,1024,512);
  for(let i=0;i<46;i++){const x=(i*137)%1024,y=50+(i*53)%170;const cloud=ctx.createRadialGradient(x,y,1,x,y,90);cloud.addColorStop(0,'rgba(224,224,211,.25)');cloud.addColorStop(1,'rgba(224,224,211,0)');ctx.fillStyle=cloud;ctx.fillRect(x-90,y-90,180,180);}
  const sky=new THREE.CanvasTexture(skyCanvas);sky.colorSpace=THREE.SRGBColorSpace;sky.mapping=THREE.EquirectangularReflectionMapping;scene.background=sky;const pmrem=new THREE.PMREMGenerator(renderer);const env=pmrem.fromEquirectangular(sky);scene.environment=env.texture;scene.environmentIntensity=.45;pmrem.dispose();
- const wet=new THREE.MeshStandardMaterial({color:0x59676b,roughness:.12,metalness:.28,transparent:true,opacity:.46,depthWrite:false});for(let i=0;i<26;i++){const patch=new THREE.Mesh(new THREE.CircleGeometry(1,18),wet);patch.rotation.x=-Math.PI/2;patch.position.set(((i*17)%23)-11,.016,((i*23)%111)-53);patch.scale.set(1+(i%3),.3+(i%4)*.2,1);scene.add(patch);}
+ const wet=new THREE.MeshStandardMaterial({color:0xb6a07a,roughness:1,metalness:0,transparent:true,opacity:.36,depthWrite:false});for(let i=0;i<26;i++){const patch=new THREE.Mesh(new THREE.CircleGeometry(1,18),wet);patch.rotation.x=-Math.PI/2;patch.position.set(((i*17)%23)-11,.016,((i*23)%111)-53);patch.scale.set(1+(i%3),.3+(i%4)*.2,1);scene.add(patch);}
 }
