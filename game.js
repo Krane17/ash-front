@@ -1,9 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id),clamp=THREE.MathUtils.clamp,lerp=THREE.MathUtils.lerp;
 let seed=8271;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}const range=(a,b)=>a+rand()*(b-a);
-const renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;renderer.autoClear=false;
+const renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.autoClear=false;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#8a999c');scene.fog=new THREE.FogExp2('#b7a78a',.006);const camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.08,260);camera.rotation.order='YXZ';const gunScene=new THREE.Scene(),gunCamera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.01,12);gunScene.add(new THREE.HemisphereLight(0xc5d4dc,0x41433d,2.8));const gl=new THREE.DirectionalLight(0xffebc8,3);gl.position.set(-3,5,2);gunScene.add(gl);
-scene.add(new THREE.HemisphereLight(0xc5d2d8,0x393b31,1.7));const sun=new THREE.DirectionalLight(0xffe6bd,2.2);sun.position.set(-35,65,-20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:160});sun.shadow.bias=-.0005;sun.shadow.normalBias=.025;sun.shadow.radius=3;scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xc5d2d8,0x393b31,1.05));const sun=new THREE.DirectionalLight(0xffe6bd,3.1);sun.position.set(-48,38,24);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:160});sun.shadow.bias=-.0005;sun.shadow.normalBias=.025;sun.shadow.radius=3;scene.add(sun);
 function tex(kind){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle=kind==='road'?'#353b3a':kind==='metal'?'#59625c':'#85867b';x.fillRect(0,0,256,256);for(let i=0;i<15000;i++){let v=range(20,170)|0;x.fillStyle=`rgba(${v},${v},${v},${range(.03,.22)})`;x.fillRect(rand()*256,rand()*256,range(1,4),range(1,3))}if(kind==='concrete'){for(let i=0;i<10;i++){x.strokeStyle='#282e2933';x.lineWidth=rand()*2;x.beginPath();let a=rand()*256,b=rand()*256;x.moveTo(a,b);for(let j=0;j<6;j++){a+=range(-20,20);b+=range(5,24);x.lineTo(a,b)}x.stroke()}x.fillStyle='#22281e28';x.fillRect(0,230,256,26)}if(kind==='metal'){for(let i=0;i<256;i+=16){x.fillStyle='#19272044';x.fillRect(i,0,3,256);x.fillStyle='#b4b9a633';x.fillRect(i+3,0,2,256)}}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;return t}
 const concrete=new THREE.MeshStandardMaterial({map:tex('concrete'),roughness:.98,color:0xb2b3a4}),road=new THREE.MeshStandardMaterial({map:tex('road'),roughness:.7,color:0x999b96}),metal=new THREE.MeshStandardMaterial({map:tex('metal'),roughness:.76,metalness:.45}),dark=new THREE.MeshStandardMaterial({color:0x202a2b,roughness:.65,metalness:.4}),glass=new THREE.MeshStandardMaterial({color:0x26383c,metalness:.65,roughness:.24}),rust=new THREE.MeshStandardMaterial({color:0x635341,roughness:.9}),sand=new THREE.MeshStandardMaterial({color:0x76715c,roughness:1}),black=new THREE.MeshStandardMaterial({color:0x141b1c,roughness:.9});
 const colliders=[],solidMeshes=[],enemies=[],enemyParts=[],effects=[],bullets=[],smokes=[];
@@ -14,11 +14,11 @@ function label(text,x,y,z,w=5,h=1,bg='#252f2e',fg='#d7d2b8'){const c=document.cr
 const buildings=[],supplies=[],walkSurfaces=[],cabinets=[];
 const FLOOR=3.6;
 const floorMat=new THREE.MeshStandardMaterial({map:tex('concrete'),color:0x96927d,roughness:.92});
-const interiorMat=new THREE.MeshStandardMaterial({map:tex('concrete'),color:0xb6b6a4,roughness:.95,emissive:0x282c24,emissiveIntensity:.3});
+const interiorMat=new THREE.MeshStandardMaterial({map:tex('concrete'),color:0xb6b6a4,roughness:.95,emissive:0x282c24,emissiveIntensity:.12});
 const stripeMat=new THREE.MeshStandardMaterial({color:0xaca68a,roughness:1});
 box(0,-.25,3,144,.5,140,road,false);road.map.repeat.set(32,32);
-for(const x of [-39,0,39])for(let z=-57;z<66;z+=9)box(x,.008,z,.13,.012,3.8,stripeMat,false);
-for(const z of [-29,-1,27,57])for(let x=-63;x<68;x+=8)box(x,.012,z,3,.014,.13,stripeMat,false);
+// Unmarked dirt streets match the old-city setting.
+
 function slab(x,z,w,d,y,mat=floorMat){box(x,y-.1,z,w,.2,d,mat,y>0);walkSurfaces.push({x,z,w:w/2,d:d/2,y});}
 function storageCabinet(b,cx,cz,y,mat=metal){
  box(cx-.5,y+.9,cz,.1,1.8,1.4,dark);
@@ -98,6 +98,13 @@ function house(x,z,id,w,d){
  for(let k=0;k<4;k++)box(x-2+k*.6,11.35,z-2,.06,.6,2.5,rust,false);
  // Corrugated shop awnings vary in width and shade.
  for(let k=0;k<12;k++)box(x-2.7+k*.5,3.26,z+d/2+.9,.08,.08,1.8,shutter,false);
+ // Boarded windows and irregular plaster loss break up repeated facade modules.
+ for(let k=0;k<3;k++){
+ const xx=x-w/2+2.2+k*3.4,yy=5.35+(id%2)*3.6;
+ if((id+k)%3===0){for(const angle of [-.65,.65]){const plank=box(xx,yy,z+d/2+.4,.13,1.7,.1,rust,false);plank.rotation.z=angle;}}
+ }
+ // Exposed masonry patches remain outside the wall and never block entrances.
+ for(let row=0;row<5;row++)for(let col=0;col<6-row%3;col++)box(x+w/2-3+col*.43+(row%2)*.2,.17+row*.22,z+d/2+.19,.39,.18,.055,(row+col)%3?rust:sand,false);
  // Recessed canopies and roof equipment vary the silhouettes.
  box(x+(id%3-1)*2,3.15,z+d/2+.9,5+(id%3),.18,1.8,metal,false);
  box(x-2,11.45,z-2,2+id%3,.8,1.8,dark,false);
@@ -106,6 +113,26 @@ function house(x,z,id,w,d){
 // Hand-shaped uneven parcels: offset facades, narrow alleys, and wider pocket courtyards.
 const parcels=[[-55,-45,17,22],[-52,-15,20,20],[-57,14,15,23],[-52,45,20,24],[-25,-43,19,21],[-24,-12,16,23],[-22,17,17,20],[-25,45,18,22],[24,-44,18,22],[27,-13,20,20],[23,16,16,23],[27,45,20,23],[54,-43,19,23],[57,-12,16,21],[53,17,20,22],[57,47,16,22]];
 for(const [x,z,w,d]of parcels)house(x,z,buildings.length+1,w,d);
+// Street-edge improvised stalls, drooping cables and low debris; keep all doorways clear.
+const timber=new THREE.MeshStandardMaterial({color:0x66533b,roughness:1});
+for(const b of buildings){
+ const side=b.x<0?1:-1,edge=b.x+side*(b.w/2+.65);
+ if(b.id%3!==0){
+  for(const zz of [-3,3])box(edge,.95,b.z+zz,.13,1.9,.13,timber);
+  const roof=box(edge+side*.35,2,b.z,1.6,.12,6.4,rust,false);roof.rotation.z=side*.14;
+  for(let k=0;k<14;k++)box(edge+side*.35,2.08,b.z-3+k*.46,1.65,.045,.06,metal,false);
+  const brace=box(edge,1.1,b.z,.1,.1,6.1,timber,false);brace.rotation.x=.15;
+ }
+ for(let k=0;k<22;k++){
+  const zz=b.z-b.d/2+rand()*b.d,xx=edge+side*range(.2,.9);
+  const rock=box(xx,.06,zz,range(.1,.45),range(.06,.16),range(.13,.5),k%3?concrete:rust,false);rock.rotation.set(range(-.2,.2),rand()*6.28,range(-.2,.2));
+ }
+ if(b.id%4===0){const points=[];for(let k=0;k<=18;k++){const t=k/18;points.push(new THREE.Vector3(edge+side*7*t,7-1.3*Math.sin(t*Math.PI),b.z+4*t));}scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0x302c23})));}
+}
+// Rounded sandbag checkpoints at existing concrete barriers.
+const bagGeometry=AshVisuals.rounded(.72,.27,.43,.08),bagInstances=new THREE.InstancedMesh(bagGeometry,sand,60),bagMatrix=new THREE.Object3D();let bagIndex=0;
+for(const [x,z]of [[2,27],[-4,2],[5,-26],[-2,-43],[9,43]])for(let row=0;row<2;row++)for(let k=0;k<6;k++){bagMatrix.position.set(x-1.8+k*.68+(row%2)*.12,1.46+row*.24,z);bagMatrix.rotation.y=range(-.1,.1);bagMatrix.updateMatrix();bagInstances.setMatrixAt(bagIndex++,bagMatrix.matrix);}
+bagInstances.castShadow=true;bagInstances.receiveShadow=true;scene.add(bagInstances);
 // Small pocket squares, loading bays and rubble make the cross streets less repetitive.
 for(const [x,z]of [[-39,0],[41,31],[-38,59],[42,-29]]){box(x,.4,z,3,.8,1.1,concrete);box(x+3,.55,z+2,1.1,1.1,1.1,rust);}
 box(0,2.6,-62,144,5.2,1);label('SECTOR 07',0,3.5,-61.45,9,1.8);

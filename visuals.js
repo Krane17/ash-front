@@ -91,6 +91,14 @@ function applyAshSurfaces(renderer,scene,materials){
  vRoughnessMapUv=metricUv;
  #endif`);};mat.customProgramCacheKey=()=> 'ash-metric-pbr-v1';mat.needsUpdate=true;
  }
+ // Dirt replaces road paint and asphalt while retaining fine surface normals.
+ const soilCanvas=document.createElement('canvas');soilCanvas.width=soilCanvas.height=512;
+ const soil=soilCanvas.getContext('2d');soil.fillStyle='#89775d';soil.fillRect(0,0,512,512);
+ let dirtSeed=6721;const dirtRand=()=>{dirtSeed=(dirtSeed*1664525+1013904223)>>>0;return dirtSeed/4294967296;};
+ for(let i=0;i<38000;i++){const v=55+Math.floor(dirtRand()*100);soil.fillStyle=`rgba(${v+25},${v+13},${v},${.12+dirtRand()*.35})`;soil.fillRect(dirtRand()*512,dirtRand()*512,1+dirtRand()*3,1+dirtRand()*2);}
+ for(let k=0;k<28;k++){soil.fillStyle='rgba(47,39,28,.10)';soil.fillRect(30+(k%2)*64+dirtRand()*4,k*19,2+dirtRand()*3,8+dirtRand()*13);}
+ const soilMap=new THREE.CanvasTexture(soilCanvas);soilMap.colorSpace=THREE.SRGBColorSpace;soilMap.wrapS=soilMap.wrapT=THREE.RepeatWrapping;soilMap.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+ for(const [mat,kind]of materials)if(kind==='asphalt'){mat.map=soilMap;mat.color.setHex(0xcabda3);mat.roughness=1;mat.normalScale.set(.28,.28);mat.needsUpdate=true;}
  const skyCanvas=document.createElement('canvas');skyCanvas.width=1024;skyCanvas.height=512;const ctx=skyCanvas.getContext('2d'),grad=ctx.createLinearGradient(0,0,0,512);grad.addColorStop(0,'#718d9d');grad.addColorStop(.48,'#d4cbb0');grad.addColorStop(.6,'#c5ae89');grad.addColorStop(1,'#414a48');ctx.fillStyle=grad;ctx.fillRect(0,0,1024,512);
  for(let i=0;i<46;i++){const x=(i*137)%1024,y=50+(i*53)%170;const cloud=ctx.createRadialGradient(x,y,1,x,y,90);cloud.addColorStop(0,'rgba(224,224,211,.25)');cloud.addColorStop(1,'rgba(224,224,211,0)');ctx.fillStyle=cloud;ctx.fillRect(x-90,y-90,180,180);}
  const sky=new THREE.CanvasTexture(skyCanvas);sky.colorSpace=THREE.SRGBColorSpace;sky.mapping=THREE.EquirectangularReflectionMapping;scene.background=sky;const pmrem=new THREE.PMREMGenerator(renderer);const env=pmrem.fromEquirectangular(sky);scene.environment=env.texture;scene.environmentIntensity=.45;pmrem.dispose();
