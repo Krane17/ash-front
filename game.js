@@ -151,7 +151,7 @@ for(const [x,z] of [[2,27],[-4,2],[5,-26],[-2,-43],[9,43]]){box(x,.65,z,4,1.3,.9
 for(let i=0;i<48;i++){const x=(rand()<.5?-1:1)*range(10,13),z=range(-55,55);let m=box(x,.15,z,range(.15,.7),range(.15,.5),range(.2,.9),rand()<.6?concrete:rust,false);m.rotation.y=rand()*6.28}
 for(const [x,z] of [[6,14],[-6,42],[-6,-49],[0,-17]]){
  const car=new THREE.Group();car.position.set(x,0,z);scene.add(car);
- const vehicleCollider={x,z,w:1.2,d:2.4,top:1.8,bottom:0};colliders.push(vehicleCollider);const wheels=[];
+ const vehicleCollider={x,z,w:1.35,d:2.55,top:1.9,bottom:0};colliders.push(vehicleCollider);const wheels=[];
  const bodyMat=new THREE.MeshStandardMaterial({color:0x5e635c,metalness:.65,roughness:.52});
  const carPart=(px,py,pz,w,h,d,m=bodyMat)=>{const q=AshVisuals.rb(car,m,px,py,pz,w,h,d,.08);solidMeshes.push(q);return q;};
  carPart(0,.67,0,2.2,.65,4.65);carPart(0,1.15,-.2,1.93,.6,2.3);carPart(0,1.52,-.26,1.85,.12,2.05);carPart(0,1.32,.99,1.73,.36,.04,glass).rotation.x=.22;
@@ -171,6 +171,9 @@ const smokeCanvas=document.createElement('canvas');smokeCanvas.width=smokeCanvas
 for(let i=0;i<24;i++){let m=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex,transparent:true,depthWrite:false}));m.position.set(-18+rand()*5,range(2,26),-32+rand()*4);m.scale.setScalar(range(6,13));scene.add(m);smokes.push(m)}
 // Batch static architecture to keep the larger three-storey district affordable to render.
 // Collision/raycast source meshes retain their world matrices and are never animated.
+const vehicleObstacles=[];
+// Include low decorative geometry (stairs, rubble and furniture), not just walking walls.
+for(const m of scene.children){if(!m.isMesh||m.geometry!==boxGeo)continue;m.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(m);if(bounds.max.y>.22&&bounds.min.y<1.9)vehicleObstacles.push({x:(bounds.min.x+bounds.max.x)/2,z:(bounds.min.z+bounds.max.z)/2,w:(bounds.max.x-bounds.min.x)/2,d:(bounds.max.z-bounds.min.z)/2,bottom:bounds.min.y,top:bounds.max.y});}
 const staticBatches=new Map();
 for(const m of [...scene.children]){if(!m.isMesh||m.geometry!==boxGeo||m===led)continue;m.updateMatrixWorld(true);if(!staticBatches.has(m.material))staticBatches.set(m.material,[]);staticBatches.get(m.material).push(m);}
 for(const [mat,meshes]of staticBatches){const batch=new THREE.InstancedMesh(boxGeo,mat,meshes.length);meshes.forEach((m,i)=>{batch.setMatrixAt(i,m.matrixWorld);scene.remove(m)});batch.castShadow=true;batch.receiveShadow=true;batch.computeBoundingSphere();scene.add(batch);}
@@ -247,11 +250,26 @@ const architecturalMaps=new Set([concrete.map,interiorMat.map,floorMat.map]);
 const pbrMaterials=[];for(const mat of new Set([...staticBatches.keys(),concrete,interiorMat,floorMat,road])){if(mat===road)pbrMaterials.push([mat,'asphalt']);else if(architecturalMaps.has(mat.map))pbrMaterials.push([mat,'concrete']);}
 applyAshSurfaces(renderer,scene,pbrMaterials);
 let driving=null;
-function vehicleFits(v,x,z,heading){const w=Math.abs(Math.cos(heading))*1.2+Math.abs(Math.sin(heading))*2.4,d=Math.abs(Math.cos(heading))*2.4+Math.abs(Math.sin(heading))*1.2;return Math.abs(x)<69-w&&z>-60+d&&z<70-d&&!colliders.some(c=>c!==v.collider&&c.bottom<1.8&&c.top>.15&&Math.abs(x-c.x)<w+c.w+.08&&Math.abs(z-c.z)<d+c.d+.08);}
-function syncVehicle(v){v.g.rotation.y=v.heading;v.collider.x=v.g.position.x;v.collider.z=v.g.position.z;v.collider.w=Math.abs(Math.cos(v.heading))*1.2+Math.abs(Math.sin(v.heading))*2.4;v.collider.d=Math.abs(Math.cos(v.heading))*2.4+Math.abs(Math.sin(v.heading))*1.2;v.g.updateMatrixWorld(true);for(const e of v.crew)if(e.vehicle){e.g.position.copy(v.g.position).add(new THREE.Vector3(0,.15,0));e.g.rotation.y=v.heading+Math.PI;e.rig.torso.position.y=.48;for(const leg of e.rig.legs)leg.hip.visible=false;}}
+function vehicleFits(v,x,z,heading){const w=Math.abs(Math.cos(heading))*1.35+Math.abs(Math.sin(heading))*2.55,d=Math.abs(Math.cos(heading))*2.55+Math.abs(Math.sin(heading))*1.35;return Math.abs(x)<69-w&&z>-60+d&&z<70-d&&!colliders.concat(vehicleObstacles).some(c=>c!==v.collider&&c.bottom<1.9&&c.top>.15&&Math.abs(x-c.x)<w+c.w+.08&&Math.abs(z-c.z)<d+c.d+.08);}
+function syncVehicle(v){v.g.rotation.y=v.heading;v.collider.x=v.g.position.x;v.collider.z=v.g.position.z;v.collider.w=Math.abs(Math.cos(v.heading))*1.35+Math.abs(Math.sin(v.heading))*2.55;v.collider.d=Math.abs(Math.cos(v.heading))*2.55+Math.abs(Math.sin(v.heading))*1.35;v.g.updateMatrixWorld(true);for(const e of v.crew)if(e.vehicle){e.g.position.copy(v.g.position).add(new THREE.Vector3(0,.15,0));e.g.rotation.y=v.heading+Math.PI;e.rig.torso.position.y=.48;for(const leg of e.rig.legs)leg.hip.visible=false;}}
 function exitPoint(v){for(const [x,z]of [[2,0],[-2,0],[0,3.3],[0,-3.3]]){const p=new THREE.Vector3(x,0,z).applyAxisAngle(new THREE.Vector3(0,1,0),v.heading).add(v.g.position);if(canStand(p.x,p.z)&&Math.abs(groundAt(p.x,p.z,.1))<.1)return p;}return null;}
 function toggleVehicle(){if(driving){if(Math.abs(driving.speed)>1.5){message('先减速停车，再按 F 下车');return;}const p=exitPoint(driving);if(!p){message('车门被挡住，请移动到空旷处');return;}driving.speed=0;driving=null;player.pos.copy(p);player.vy=0;return;}const v=vehicles.find(v=>!v.enemy&&v.g.position.distanceTo(player.pos)<3.8);if(v&&player.pos.y<.5){driving=v;v.speed=0;player.crouch=false;player.vy=0;aim=firing=false;reload=0;message('W/S 油门与倒车 · A/D 转向 · 空格刹车 · F 下车',5);}}
-function stepVehicle(v,dt,throttle,steer){v.speed=clamp(v.speed+throttle*7*dt,-4,12);if(!throttle)v.speed*=Math.exp(-2*dt);if(v===driving&&keys.Space)v.speed*=Math.exp(-10*dt);const count=Math.max(1,Math.ceil(Math.abs(v.speed*dt)/.1));for(let k=0;k<count;k++){const h=v.heading-steer*v.speed*.065*dt/count,x=v.g.position.x-Math.sin(h)*v.speed*dt/count,z=v.g.position.z-Math.cos(h)*v.speed*dt/count;if(!vehicleFits(v,x,z,h)){v.speed=0;syncVehicle(v);return false;}v.heading=h;v.g.position.set(x,0,z);}for(const wheel of v.wheels)wheel.rotateZ(v.speed*dt/.485);syncVehicle(v);return true;}
+function vehicleContacts(v,x,z,h){return enemies.filter(e=>{if(e.dead||e.vehicle||Math.abs(e.g.position.y-v.g.position.y)>1.6)return false;const dx=e.g.position.x-x,dz=e.g.position.z-z,lx=Math.cos(h)*dx-Math.sin(h)*dz,lz=Math.sin(h)*dx+Math.cos(h)*dz;return Math.abs(lx)<1.35+.32&&Math.abs(lz)<2.55+.32;});}
+function rollWheels(v,distance){for(const wheel of v.wheels)wheel.rotateZ(distance/.485);}
+function stepVehicle(v,dt,throttle,steer){
+ v.speed=clamp(v.speed+throttle*7*dt,-4,12);if(!throttle)v.speed*=Math.exp(-2*dt);if(v===driving&&keys.Space)v.speed*=Math.exp(-10*dt);
+ const count=Math.max(1,Math.ceil(Math.abs(v.speed*dt)/.08));let travelled=0;
+ for(let k=0;k<count;k++){
+  const h=v.heading-steer*v.speed*.065*dt/count,x=v.g.position.x-Math.sin(h)*v.speed*dt/count,z=v.g.position.z-Math.cos(h)*v.speed*dt/count;
+  if(!vehicleFits(v,x,z,h)){v.speed=0;rollWheels(v,travelled);syncVehicle(v);return false;}
+  const contacts=vehicleContacts(v,x,z,h);
+  if(contacts.length){if(v!==driving||Math.abs(v.speed)<3){v.speed=0;rollWheels(v,travelled);syncVehicle(v);return false;}
+   for(const e of contacts){e.health=0;kill(e);}v.speed*=.82;message('车辆撞击 · 威胁解除',1.7);
+  }
+  travelled+=Math.hypot(x-v.g.position.x,z-v.g.position.z)*Math.sign(v.speed);v.heading=h;v.g.position.set(x,0,z);
+ }
+ rollWheels(v,travelled);syncVehicle(v);return true;
+}
 function dismountCrew(v){for(const e of v.crew){if(e.dead){e.vehicle=null;for(const leg of e.rig.legs)leg.hip.visible=true;continue;}const p=exitPoint(v);if(!p)return false;e.vehicle=null;e.rig.torso.position.y=.96;for(const leg of e.rig.legs)leg.hip.visible=true;e.g.position.copy(p);e.home.copy(p);e.alert=5;}v.enemy=false;v.speed=0;return true;}
 for(const v of vehicles.filter(v=>v.enemy)){const e=soldier(v.g.position.x,v.g.position.z);e.vehicle=v;v.crew.push(e);v.route=[new THREE.Vector3(0,0,-17),new THREE.Vector3(0,0,-35)];v.target=1;syncVehicle(v);}
 function updateVehicles(dt){for(const v of vehicles){if(v===driving){stepVehicle(v,dt,(keys.KeyW?1:0)-(keys.KeyS?1:0),(keys.KeyD?1:0)-(keys.KeyA?1:0));player.pos.copy(v.g.position);continue;}if(!v.enemy)continue;if(v.crew.every(e=>e.dead)){dismountCrew(v);continue;}const near=v.g.position.distanceTo(player.pos)<18&&!obstruct(v.g.position.clone().add(new THREE.Vector3(0,2,0)),camera.position);if(near||v.blocked>2){dismountCrew(v);continue;}const target=v.route[v.target],dx=target.x-v.g.position.x,dz=target.z-v.g.position.z;if(Math.hypot(dx,dz)<1){v.target=1-v.target;v.speed=0;continue;} // Reverse on this narrow patrol lane rather than turn through walls.
